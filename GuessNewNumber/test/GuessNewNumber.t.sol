@@ -23,7 +23,7 @@ contract GuessNewNumberTest is Test {
         vm.roll(blockNumber);
         vm.warp(blockTimestamp);
 
-        // Place your solution here
+        // Call the guess function with the correct number
         uint8 answer = exploitContract.Exploit();
         _checkSolved(answer);
     }
