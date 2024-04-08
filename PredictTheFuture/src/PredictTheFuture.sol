@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
+import "forge-std/console.sol";
+
 contract PredictTheFuture {
     address guesser;
     uint8 guess;
@@ -27,20 +29,11 @@ contract PredictTheFuture {
         require(msg.sender == guesser);
         require(block.number > settlementBlockNumber);
 
-        uint8 answer = uint8(
-            uint256(
-                keccak256(
-                    abi.encodePacked(
-                        blockhash(block.number - 1),
-                        block.timestamp
-                    )
-                )
-            )
-        ) % 10;
-
+        uint8 answer = uint8(uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), block.timestamp)))) % 10;
+        console.log(answer);
         guesser = address(0);
         if (guess == answer) {
-            (bool ok, ) = msg.sender.call{value: 2 ether}("");
+            (bool ok,) = msg.sender.call{value: 2 ether}("");
             require(ok, "Failed to send to msg.sender");
         }
     }
@@ -52,6 +45,4 @@ contract ExploitContract {
     constructor(PredictTheFuture _predictTheFuture) {
         predictTheFuture = _predictTheFuture;
     }
-
-    // Write your exploit code below
 }
