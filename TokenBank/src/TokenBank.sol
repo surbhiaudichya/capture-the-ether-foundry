@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
+import "forge-std/console.sol";
+
 interface ITokenReceiver {
-    function tokenFallback(
-        address from,
-        uint256 value,
-        bytes memory data
-    ) external;
+    function tokenFallback(address from, uint256 value, bytes memory data) external;
 }
 
 contract SimpleERC223Token {
@@ -21,7 +19,7 @@ contract SimpleERC223Token {
 
     event Transfer(address indexed from, address indexed to, uint256 value);
 
-    constructor() public {
+    constructor() {
         balanceOf[msg.sender] = totalSupply;
         emit Transfer(address(0), msg.sender, totalSupply);
     }
@@ -40,13 +38,8 @@ contract SimpleERC223Token {
         return transfer(to, value, empty);
     }
 
-    function transfer(
-        address to,
-        uint256 value,
-        bytes memory data
-    ) public returns (bool) {
+    function transfer(address to, uint256 value, bytes memory data) public returns (bool) {
         require(balanceOf[msg.sender] >= value);
-
         balanceOf[msg.sender] -= value;
         balanceOf[to] += value;
         emit Transfer(msg.sender, to, value);
@@ -57,28 +50,17 @@ contract SimpleERC223Token {
         return true;
     }
 
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 
     mapping(address => mapping(address => uint256)) public allowance;
 
-    function approve(
-        address spender,
-        uint256 value
-    ) public returns (bool success) {
+    function approve(address spender, uint256 value) public returns (bool success) {
         allowance[msg.sender][spender] = value;
         emit Approval(msg.sender, spender, value);
         return true;
     }
 
-    function transferFrom(
-        address from,
-        address to,
-        uint256 value
-    ) public returns (bool success) {
+    function transferFrom(address from, address to, uint256 value) public returns (bool success) {
         require(value <= balanceOf[from]);
         require(value <= allowance[from][msg.sender]);
 
@@ -95,9 +77,8 @@ contract TokenBankChallenge {
     mapping(address => uint256) public balanceOf;
     address public player;
 
-    constructor(address _player) public {
+    constructor(address _player) {
         token = new SimpleERC223Token();
-        player = _player;
         // Divide up the 1,000,000 tokens, which are all initially assigned to
         // the token contract's creator (this contract).
         balanceOf[msg.sender] = 500000 * 10 ** 18; // half for me
@@ -105,14 +86,11 @@ contract TokenBankChallenge {
     }
 
     function isComplete() public view returns (bool) {
-        return token.balanceOf(address(this)) == 0;
+        return token.balanceOf(address(this)) == 0; // this check only token balanceOf mapping
     }
 
-    function tokenFallback(
-        address from,
-        uint256 value,
-        bytes memory data
-    ) public {
+    function tokenFallback(address from, uint256 value, bytes memory data) public {
+        console.log("did i reach here");
         require(msg.sender == address(token));
         require(balanceOf[from] + value >= balanceOf[from]);
 
@@ -121,20 +99,23 @@ contract TokenBankChallenge {
 
     function withdraw(uint256 amount) public {
         require(balanceOf[msg.sender] >= amount);
-
         require(token.transfer(msg.sender, amount));
+
         unchecked {
             balanceOf[msg.sender] -= amount;
         }
     }
 }
 
-// Write your exploit contract below
+//In this challenge, the vulnerability lies in the TokenBankChallenge contract's tokenFallback function, which can be exploited for re-entry attacks.
+// Check TokenBank.t.sol
+// Attacker can reenter withdraw using tokenFallback
+// Attacker smart contract will call withdraw and token.transfer will call Attacker contracts tokenFallback which will reenter Withdraw until it steal all tokens from TokenBank.
+
 contract TokenBankAttacker {
     TokenBankChallenge public challenge;
 
     constructor(address challengeAddress) {
         challenge = TokenBankChallenge(challengeAddress);
     }
-    // Write your exploit functions here
 }
